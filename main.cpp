@@ -13,14 +13,24 @@ float lerp(float a, float b, float t)
     return a * t + b * (1 - t);
 }
 
+glm::vec3 get_min(glm::vec3 v) {
+	glm::vec3 ret = 	 glm::vec3(v.x, 0, 0);
+
+	if (glm::abs(v.z) < glm::abs(v.z)) ret = glm::vec3(0, 0, v.z);
+	if (glm::abs(v.y) < glm::abs(v.x)) ret = glm::vec3(0, v.y, 0);
+	
+	return ret;
+}
+
 #include "shader.h"
 #include "camera.h"
 #include "mesh.h"
 #include "obj_reader.h"
 #include "aabb_phys_object.cpp"
+#include "rigid_body.cpp"
 
-#define SCR_WIDTH 1920
-#define SCR_HEIGHT 1080
+#define SCR_WIDTH 1440
+#define SCR_HEIGHT 720
 
 //delta
 float deltaTime = 0.0f;	// Time between current frame and last frame
@@ -31,6 +41,8 @@ camera main_camera;
 float yaw = 90.0f, pitch = 0.0f;
 bool firstMouse = true;
 float lastX = 0, lastY = 0;
+
+rigid_body rig1;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -79,7 +91,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void processInput(GLFWwindow *window)
 {
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {rig1. velocity.y = 5.0f;}
+	
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE) {rig1. velocity.z = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {rig1. velocity.z = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE) {rig1. velocity.x = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE) {rig1. velocity.x = 0.0f;}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {rig1. velocity.z = 3.0f;}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {rig1. velocity.z = -3.0f;}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {rig1. velocity.x = 3.0f;}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {rig1. velocity.x = -3.0f;}
 }
 
 int main() {
@@ -130,6 +152,9 @@ int main() {
 	collision_area area1(collision_mesh_1);
 	collision_area area2(collision_mesh_1);
 
+	rig1 = rigid_body(area1, area1.collision_mesh.position);
+	rigid_body rig2(area2, area2.collision_mesh.position - glm::vec3(0.0f, 5, 0.0f));
+
 	while (!glfwWindowShouldClose(window)) {
 		main_camera.update_mouse(yaw, pitch);
 		processInput(window);
@@ -153,15 +178,29 @@ int main() {
 		main_shader.setMat4("projection", projection);
         main_shader.setMat4("view", view);
 
-		area1.collision_mesh.drow();
-		
-		area2.collision_mesh.position = main_camera.cameraPos + (main_camera.cameraFront * glm::vec3(5));
-		area2.collision_mesh.drow();
+		//rig1.apply_gravity(deltaTime);
+		rig1.apply_gravity(deltaTime);
+		rig1.area.collision_mesh.position = rig1.position;
 
-		glm::vec3 col = area1.is_aabb_colliding_with(area2);
-	
-		if (col.x > 0.1f && col.y > 0.1f && col.z > 0.1f) std::cout << "COLLISION!!" << std::endl;
-		else std::cout << "nah" << std::endl;
+		main_shader.setVec3("objectColor", glm::vec3(0.2f, 1.0f, 0.9f));
+		rig2.area.collision_mesh.drow();
+		rig2.area.collision_mesh.position = rig2.position;
+		
+		glm::vec3 aabb = rig1.area.is_aabb_colliding_with(rig2.area);
+		glm::vec3 maabb = get_min(aabb);
+
+		if (glm::abs(aabb.x) > 0 && glm::abs(aabb.y) > 0 && glm::abs(aabb.z) > 0) {
+			rig1.position += maabb; 
+			rig1.check_floor(aabb);
+		}
+		rig1.move(deltaTime);
+		rig1.area.collision_mesh.position = rig1.position;
+		
+		main_camera.cameraPos = rig1.position;
+		rig1.area.collision_mesh.drow();
+
+		//std::cout << maabb.x << ", " << maabb.y << ", " << maabb.z << std::endl;
+		if (rig1.is_on_floor) std::cout << "on floor" << std::endl;
 
 		glfwSwapBuffers(window);
     	glfwPollEvents();

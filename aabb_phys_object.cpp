@@ -9,6 +9,8 @@ public:
 	int min_x;
 	int min_y;
 	int min_z;
+	
+	collision_area(){}
 
 	collision_area(mesh ncm) {
 		collision_mesh = ncm;
@@ -31,16 +33,19 @@ public:
 			if (min_z > collision_mesh.own_vertices[i + 2]) min_z = collision_mesh.own_vertices[i];
 		}
 	}
-
+	
 	glm::vec3 is_aabb_colliding_with(collision_area area) {
 		glm::vec3 ret = glm::vec3(0.0f, 0.0f, 0.0f);
-
 		
 		// AABB collision check lock ugly bruh
-		if ((area.max_x + area.collision_mesh.position.x > min_x + collision_mesh.position.x && area.max_x + area.collision_mesh.position.x < max_x + collision_mesh.position.x) || (area.min_x + area.collision_mesh.position.x > min_x + collision_mesh.position.x && area.min_x + area.collision_mesh.position.x < max_x + collision_mesh.position.x)) ret.x = 1.0f;
-		if ((area.max_y + area.collision_mesh.position.y > min_y + collision_mesh.position.y && area.max_y + area.collision_mesh.position.y < max_y + collision_mesh.position.y) || (area.min_y + area.collision_mesh.position.y > min_y + collision_mesh.position.y && area.min_y + area.collision_mesh.position.y < max_y + collision_mesh.position.y)) ret.y = 1.0f;
-		if ((area.max_z + area.collision_mesh.position.z > min_z + collision_mesh.position.z && area.max_z + area.collision_mesh.position.z < max_z + collision_mesh.position.z) || (area.min_z + area.collision_mesh.position.z > min_z + collision_mesh.position.z && area.min_z + area.collision_mesh.position.z < max_z + collision_mesh.position.z)) ret.z = 1.0f;
+		if (area.max_x + area.collision_mesh.position.x >= min_x + collision_mesh.position.x && area.max_x + area.collision_mesh.position.x < max_x + collision_mesh.position.x) ret.x = (area.max_x + area.collision_mesh.position.x) - (min_x + collision_mesh.position.x);
+		if (area.min_x + area.collision_mesh.position.x >= min_x + collision_mesh.position.x && area.min_x + area.collision_mesh.position.x < max_x + collision_mesh.position.x) ret.x = (area.min_x + area.collision_mesh.position.x) - (max_x + collision_mesh.position.x);
 		
+		if (area.max_y + area.collision_mesh.position.y >= min_y + collision_mesh.position.y && area.max_y + area.collision_mesh.position.y < max_y + collision_mesh.position.y) ret.y = (area.max_y + area.collision_mesh.position.y) - (min_y + collision_mesh.position.y);
+		if (area.min_y + area.collision_mesh.position.y >= min_y + collision_mesh.position.y && area.min_y + area.collision_mesh.position.y < max_y + collision_mesh.position.y) ret.y = (area.min_y + area.collision_mesh.position.y) - (max_y + collision_mesh.position.y);
+
+		if (area.max_z + area.collision_mesh.position.z >= min_z + collision_mesh.position.z && area.max_z + area.collision_mesh.position.z < max_z + collision_mesh.position.z) ret.z = (area.max_z + area.collision_mesh.position.z) - (min_z + collision_mesh.position.z);
+		if (area.min_z + area.collision_mesh.position.z >= min_z + collision_mesh.position.z && area.min_z + area.collision_mesh.position.z < max_z + collision_mesh.position.z) ret.z = (area.min_z + area.collision_mesh.position.z) - (max_z + collision_mesh.position.z);
 		return ret;
 	}
 };
