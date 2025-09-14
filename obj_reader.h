@@ -1,4 +1,4 @@
-class obj_reader {
+class ObjReader {
 public:
 	std::vector<float> vertices;
 
@@ -100,11 +100,11 @@ public:
 		vertices.clear();
 	}
 
-	mesh create_mesh(Shader* shd) {
+	Mesh create_mesh(Shader* shd) {
 		//std::cout << vertices.size() << std::endl;
 		//print_vertices();
 		//exit(0);
-		return mesh(&vertices[0], vertices.size() * sizeof(float), shd);
+		return Mesh(&vertices[0], vertices.size() * sizeof(float), shd);
 	}
 
 	void print_vertices() {

@@ -1,14 +1,22 @@
-class mesh {
+class Mesh : public Node3D {
 public:
 	unsigned int VBO, VAO;
 	unsigned int vertices_cnt;
 	float* own_vertices;
 	Shader* shader;
-	glm::vec3 position;
 
-	mesh() {}
+	std::string name = "Mesh";
 
-	mesh(float* vertices, int vertices_size, Shader* new_shader, glm::vec3 npos = glm::vec3(0,0,0)) {
+	Mesh() {}
+
+	/*Mesh(float* vertices, int vertices_size, glm::vec3 npos = glm::vec3(0,0,0)) {
+		shader = new_shader;
+		vertices_cnt = vertices_size;
+		position = npos;
+		own_vertices = vertices;
+	}*/
+	Mesh(float* vertices, int vertices_size, Shader* new_shader, glm::vec3 npos = glm::vec3(0,0,0)) 
+		: Node3D(npos) {
 		shader = new_shader;
 		vertices_cnt = vertices_size;
 		position = npos;
