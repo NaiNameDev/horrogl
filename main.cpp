@@ -120,39 +120,39 @@ void processInput(GLFWwindow *window)
 }
 
 int main() {
-	// no glfw debug zone
+	/*/ no glfw debug zone
 		Node root;
 		root.init_root();
 		root.set_name("root");
 
 		Node child;
 		child.set_name("child");
-		child.move_to_child(&root);
+		child.move_to_child(root.form_node_prt());
 		
 		Node child2;
 		child2.set_name("child2");
-		child2.move_to_child(&root);
+		child2.move_to_child(root.form_node_prt());
 
 		Node child_of_child;
 		child_of_child.set_name("child_of_child");
-		child_of_child.move_to_child(&child);
+		child_of_child.move_to_child(child.form_node_prt());
 
 		Node3D sigma(glm::vec3(1,1,1));
-		sigma.set_name("3d_node");
-		sigma.move_to_child(&child_of_child);
+		sigma.set_name("sigma3D");
+		sigma.move_to_child(child_of_child.form_node_prt());
 		
 		Node3D sigma2(glm::vec3(1,2,1));
-		sigma2.set_name("3d_node22");
-		sigma2.move_to_child(&sigma);
+		sigma2.set_name("sigma2_3D");
+		sigma2.move_to_child(sigma.form_node_prt());
 
 		glm::vec3 a = sigma2.get_global_position();
 
 		std::cout << a.x << " " << a.y << " " << a.z << std::endl;
 
-		//root.show_tree_from_here();
+		root.show_tree_from_here();
 
 		exit(0);
-	//
+	/*/
 	glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -199,7 +199,7 @@ int main() {
 	
 	rdr.read_vertices("./media/obj/cube.obj");
 	CollisionMesh rg1_mesh = CollisionMesh(rdr.create_mesh(&main_shader));
-	
+
 	CollisionMesh wall_mesh = CollisionMesh(rdr.create_mesh(&main_shader));
 	
 	rdr.clear_vertices();
@@ -223,6 +223,30 @@ int main() {
 	rig1.layer = &layer1;
 	rig2.layer = &layer1;
 	wall_rig.layer = &layer1;
+	
+	//tree start here
+	Node root;
+	root.init_root();
+	root.set_name("root");
+
+	rig1.move_to_child(root.form_node_prt());
+	rig1.set_name("rig1");
+	rig2.move_to_child(root.form_node_prt());
+	rig2.set_name("rig2");
+	wall_rig.move_to_child(root.form_node_prt());
+	wall_rig.set_name("wr");
+
+	rig1.add_child(rg1_mesh.form_node_prt());
+	rig2.add_child(rg2_mesh.form_node_prt());
+	wall_rig.add_child(wall_mesh.form_node_prt());
+
+	Node3D nd(glm::vec3(3,10,3));
+	nd.set_name("test");
+	nd.move_to_child(rig1.form_node_prt());
+	
+	std::cout << root.childs[0].type << std::endl;
+
+	root.show_tree_from_here();
 
 	while (!glfwWindowShouldClose(window)) {
 		main_camera.update_mouse(yaw, pitch);
@@ -250,7 +274,7 @@ int main() {
 		main_shader.setVec3("objectColor", glm::vec3(0.2f, 2.0f, 0.9f));
 		wall_rig.velocity = glm::vec3(0, sin(glfwGetTime()), 0);
 		wall_rig.move(deltaTime);
-		wall_rig.col_mesh->position = wall_rig.position;
+		//wall_rig.col_mesh->position = wall_rig.position;
 		wall_rig.col_mesh->drow();
 
 		main_shader.setVec3("objectColor", glm::vec3(0.2f, 1.0f, 0.9f));
@@ -262,6 +286,8 @@ int main() {
 		main_camera.cameraPos = rig1.position;
 		
 		//main_shader.setVec3("objectColor", glm::vec3(0.9f, 1.0f, 0.9f));
+	//std::cout << wall_mesh.get_global_position().y << std::endl;
+	//std::cout << wall_mesh.position.y << std::endl;
 		//rig1.col_mesh->drow();
 
 		glfwSwapBuffers(window);

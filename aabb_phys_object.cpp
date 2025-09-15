@@ -54,11 +54,14 @@ public:
 	glm::vec3 is_aabb_colliding_with(CollisionMesh area) {
 		glm::vec3 ret = glm::vec3(0.0f, 0.0f, 0.0f);
 
-		glm::vec3 my_min = glm::vec3(min_x + position.x, min_y + position.y, min_z + position.z);
-		glm::vec3 my_max = glm::vec3(max_x + position.x, max_y + position.y, max_z + position.z);
+		glm::vec3 my_global = get_global_position();
+		glm::vec3 area_global = area.get_global_position();
+
+		glm::vec3 my_min = glm::vec3(min_x + my_global.x, min_y + my_global.y, min_z + my_global.z);
+		glm::vec3 my_max = glm::vec3(max_x + my_global.x, max_y + my_global.y, max_z + my_global.z);
 	
-		glm::vec3 area_min = glm::vec3(area.min_x + area.position.x, area.min_y + area.position.y, area.min_z + area.position.z);
-		glm::vec3 area_max = glm::vec3(area.max_x + area.position.x, area.max_y + area.position.y, area.max_z + area.position.z);
+		glm::vec3 area_min = glm::vec3(area.min_x + area_global.x, area.min_y + area_global.y, area.min_z + area_global.z);
+		glm::vec3 area_max = glm::vec3(area.max_x + area_global.x, area.max_y + area_global.y, area.max_z + area_global.z);
 		
 		if (my_max.x >= area_min.x && my_max.x <= area_max.x) ret.x = area_min.x - my_max.x;
 		if (my_min.x >= area_min.x && my_min.x <= area_max.x) ret.x = std::abs(my_min.x - area_max.x);

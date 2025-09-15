@@ -1,21 +1,32 @@
+enum node_type {DNODE, NODE3D, NODE2D, UINODE};
+typedef struct {
+	void* ptr;
+	node_type type;
+} node_ptr;
+
 class Node {
 public:
-	Node* parant;
-	std::vector<Node*> childs;
+	node_ptr parant;
+	std::vector<node_ptr> childs;
+	enum node_type own_type = DNODE;
 
 	std::string name = "Node";
 
 	Node() {}
 	
+	node_ptr form_node_prt() {
+		return (node_ptr){this, own_type};
+	}
+
 	void init_root() {
-		parant = this;
+		parant = form_node_prt();
 	}
-	void add_child(Node* new_child) {
-		childs.push_back(new_child);
-		new_child->parant = this;
+	void add_child(node_ptr child_ptr) {
+		childs.push_back(child_ptr);
+		static_cast<Node*>(child_ptr.ptr)->parant = form_node_prt();
 	}
-	void move_to_child(Node* new_parant) {
-		new_parant->add_child(this);
+	void move_to_child(node_ptr new_parant) {
+		static_cast<Node*>(new_parant.ptr)->add_child(form_node_prt());
 		parant = new_parant;
 	}
 	void set_name(std::string nname) {
@@ -26,30 +37,32 @@ public:
 
 		for (int i = 0; i < childs.size(); i++) {
 			for (int t = 0; t < deep; t++) std::cout << "  ";
-			std::cout << childs[i]->name << '\n';
-			childs[i]->show_tree_from_here(deep + 1);
+			std::cout << static_cast<Node*>(childs[i].ptr)->name << " " << childs[i].type << '\n';
+			static_cast<Node*>(childs[i].ptr)->show_tree_from_here(deep + 1);
 		}
 	}
-
+	
 };
 
 class Node3D : public Node {
 public:
 	glm::vec3 position;
 	std::string name = "Node3D";
+	enum node_type own_type = NODE3D;
 
-	Node3D(glm::vec3 npos = glm::vec3(0,0,0)) { position = npos; }
+	Node3D(glm::vec3 npos = glm::vec3(0,0,0)) { position = npos; own_type = NODE3D; }
+	
+	node_ptr form_node_prt() {
+		return (node_ptr){this, own_type};
+	}
 
 	glm::vec3 get_global_position() {
 		glm::vec3 ret = position;
 
-		Node* tmp = this;
-		while(tmp->parant != tmp) {
-			if (std::is_base_of< std::decay_t<decltype(*tmp)>, Node3D>::value) {
-				std::cout << tmp->name <<std::endl;
-				ret += static_cast<Node3D*>(tmp->parant)->position;
-			}
-			tmp = tmp->parant;
+		node_ptr tmp = parant;
+		while(tmp.type == NODE3D) {
+			ret += static_cast<Node3D*>(tmp.ptr)->position;
+			tmp = static_cast<Node3D*>(tmp.ptr)->parant;
 		}
 
 		return ret;
