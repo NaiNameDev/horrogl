@@ -39,11 +39,16 @@ public:
 	void drow() {
         glBindVertexArray(VAO);
 		glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-		model = glm::translate(model, position);
+		model = glm::translate(model, get_global_position());
 		shader->setMat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, vertices_cnt);
 		
 	}
+
+	void ts() {
+		std::cout << get_global_position().y << std::endl;
+	}
+
 	void kill() {
     	glDeleteVertexArrays(1, &VAO);
     	glDeleteBuffers(1, &VBO);

@@ -4,6 +4,8 @@ typedef struct {
 	node_type type;
 } node_ptr;
 
+class Node3D;
+
 class Node {
 public:
 	node_ptr parant;
@@ -25,10 +27,10 @@ public:
 		childs.push_back(child_ptr);
 		static_cast<Node*>(child_ptr.ptr)->parant = form_node_prt();
 	}
-	void move_to_child(node_ptr new_parant) {
-		static_cast<Node*>(new_parant.ptr)->add_child(form_node_prt());
-		parant = new_parant;
-	}
+	//void move_to_child(node_ptr new_parant) {    //this shit doesnt work bruh
+	//	static_cast<Node*>(new_parant.ptr)->add_child(form_node_prt());
+	//	parant = new_parant;
+	//}
 	void set_name(std::string nname) {
 		name = nname;
 	}
@@ -37,7 +39,7 @@ public:
 
 		for (int i = 0; i < childs.size(); i++) {
 			for (int t = 0; t < deep; t++) std::cout << "  ";
-			std::cout << static_cast<Node*>(childs[i].ptr)->name << " " << childs[i].type << '\n';
+			std::cout << static_cast<Node*>(childs[i].ptr)->name << " type:" << childs[i].type << '\n';
 			static_cast<Node*>(childs[i].ptr)->show_tree_from_here(deep + 1);
 		}
 	}
@@ -60,7 +62,8 @@ public:
 		glm::vec3 ret = position;
 
 		node_ptr tmp = parant;
-		while(tmp.type == NODE3D) {
+		while(static_cast<Node3D*>(tmp.ptr)->own_type == NODE3D) {
+			//std::cout << static_cast<Node3D*>(tmp.ptr)->own_type << std::endl;
 			ret += static_cast<Node3D*>(tmp.ptr)->position;
 			tmp = static_cast<Node3D*>(tmp.ptr)->parant;
 		}

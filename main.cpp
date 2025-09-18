@@ -100,12 +100,12 @@ void processInput(GLFWwindow *window)
 	//if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE) {rig1. velocity.y = 0.0f;}
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		rig1. velocity.x += main_camera.cameraFront.x * player_speed;
-		rig1. velocity.z += main_camera.cameraFront.z * player_speed;
+		rig1. velocity.x = main_camera.cameraFront.x * player_speed;
+		rig1. velocity.z = main_camera.cameraFront.z * player_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		rig1. velocity.x += main_camera.cameraFront.x * -player_speed;
-		rig1. velocity.z += main_camera.cameraFront.z * -player_speed;
+		rig1. velocity.x = main_camera.cameraFront.x * -player_speed;
+		rig1. velocity.z = main_camera.cameraFront.z * -player_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		rig1. velocity.x += glm::normalize(glm::cross(main_camera.cameraFront, main_camera.cameraUp)).x * -player_speed;
@@ -125,27 +125,19 @@ int main() {
 		root.init_root();
 		root.set_name("root");
 
-		Node child;
-		child.set_name("child");
-		child.move_to_child(root.form_node_prt());
-		
-		Node child2;
-		child2.set_name("child2");
-		child2.move_to_child(root.form_node_prt());
-
-		Node child_of_child;
-		child_of_child.set_name("child_of_child");
-		child_of_child.move_to_child(child.form_node_prt());
-
 		Node3D sigma(glm::vec3(1,1,1));
 		sigma.set_name("sigma3D");
-		sigma.move_to_child(child_of_child.form_node_prt());
+		root.add_child(sigma.form_node_prt());
 		
 		Node3D sigma2(glm::vec3(1,2,1));
 		sigma2.set_name("sigma2_3D");
-		sigma2.move_to_child(sigma.form_node_prt());
+		sigma.add_child(sigma2.form_node_prt());
 
-		glm::vec3 a = sigma2.get_global_position();
+		Node3D sigma3(glm::vec3(1,2,1));
+		sigma3.set_name("sigma3_3D");
+		sigma2.add_child(sigma3.form_node_prt());
+
+		glm::vec3 a = sigma3.get_global_position();
 
 		std::cout << a.x << " " << a.y << " " << a.z << std::endl;
 
@@ -229,22 +221,17 @@ int main() {
 	root.init_root();
 	root.set_name("root");
 
-	rig1.move_to_child(root.form_node_prt());
+	root.add_child(rig1.form_node_prt());
 	rig1.set_name("rig1");
-	rig2.move_to_child(root.form_node_prt());
+	root.add_child(rig2.form_node_prt());
 	rig2.set_name("rig2");
-	wall_rig.move_to_child(root.form_node_prt());
+	root.add_child(wall_rig.form_node_prt());
 	wall_rig.set_name("wr");
 
 	rig1.add_child(rg1_mesh.form_node_prt());
 	rig2.add_child(rg2_mesh.form_node_prt());
 	wall_rig.add_child(wall_mesh.form_node_prt());
-
-	Node3D nd(glm::vec3(3,10,3));
-	nd.set_name("test");
-	nd.move_to_child(rig1.form_node_prt());
-	
-	std::cout << root.childs[0].type << std::endl;
+	wall_mesh.set_name("sorry you're not the sigma");
 
 	root.show_tree_from_here();
 
@@ -272,23 +259,22 @@ int main() {
         main_shader.setMat4("view", view);
 		
 		main_shader.setVec3("objectColor", glm::vec3(0.2f, 2.0f, 0.9f));
-		wall_rig.velocity = glm::vec3(0, sin(glfwGetTime()), 0);
+		wall_rig.velocity = glm::vec3(0, sin(glfwGetTime()), sin(glfwGetTime()));
 		wall_rig.move(deltaTime);
-		//wall_rig.col_mesh->position = wall_rig.position;
 		wall_rig.col_mesh->drow();
 
 		main_shader.setVec3("objectColor", glm::vec3(0.2f, 1.0f, 0.9f));
-		rig2.col_mesh->drow();
 		rig2.col_mesh->position = rig2.position;
+		rig2.col_mesh->drow();
 		
 		rig1.apply_gravity(deltaTime);
 		rig1.move_and_colide(deltaTime);
-		main_camera.cameraPos = rig1.position;
 		
 		//main_shader.setVec3("objectColor", glm::vec3(0.9f, 1.0f, 0.9f));
-	//std::cout << wall_mesh.get_global_position().y << std::endl;
-	//std::cout << wall_mesh.position.y << std::endl;
 		//rig1.col_mesh->drow();
+		//if (rig1.is_on_floor) std::cout << "sigma " << std::endl;
+		//else std::cout << "not sigma :(" << std::endl;
+		main_camera.cameraPos = rig1.get_global_position();// - main_camera.cameraFront * glm::vec3(5);
 
 		glfwSwapBuffers(window);
     	glfwPollEvents();

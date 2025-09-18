@@ -103,34 +103,27 @@ public:
 	: Node3D(npos) { }
 
 	void apply_gravity(float delta) {
-		if (!is_on_floor) {
-			velocity.y -= gravity;
-		}
-	}
-	void check_floor(glm::vec3 aabb) {
-		if (aabb.y > 0.01f) {
-			//is_on_floor = true;
-			velocity.y = 0;
-		}
-		else is_on_floor = false;
+		velocity.y -= gravity;
 	}
 	void move(float delta) {
 		position += velocity * delta;
 	}
 	void move_and_colide(float delta) {
-		position += velocity * delta;
+		move(delta);
 		
 		for (int i = 0; i < layer->layer.size(); i++) {
 			if (layer->layer[i] != this) {
 				glm::vec3 aabb = col_mesh->is_aabb_colliding_with(*layer->layer[i]->col_mesh);
+				glm::vec3 maabb = get_min(aabb);
 			
 				if (glm::abs(aabb.x) > 0 && glm::abs(aabb.y) > 0 && glm::abs(aabb.z) > 0) {
-					check_floor(aabb);
-					glm::vec3 maabb = get_min(aabb);
+					if (maabb.y > 0.0f) {
+						is_on_floor = true;
+						velocity.y = 0;
+					}
 					position += maabb; 
 				}
 			}
 		}
-		col_mesh->position = position;
 	}
 };
