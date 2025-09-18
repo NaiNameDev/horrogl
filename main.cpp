@@ -1,8 +1,13 @@
 #include "include/glad/glad.h"
 #include <GLFW/glfw3.h>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <type_traits>
+
+//for 2D
+#define STB_IMAGE_IMPLEMENTATION
+#include "include/stb_image.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,12 +25,14 @@ glm::vec3 get_min(glm::vec3 v) {
 	return glm::vec3(0,0,v.z);
 }
 
-#include "shader.h"
+#include "shader.cpp"
 #include "node.cpp"
-#include "camera.h"
-#include "mesh.h"
-#include "obj_reader.h"
+#include "camera.cpp"
+#include "mesh.cpp"
+#include "obj_reader.cpp"
 #include "aabb_phys_object.cpp"
+
+#include "sprite.cpp"
 
 #define SCR_WIDTH 1440
 #define SCR_HEIGHT 720
@@ -145,6 +152,9 @@ int main() {
 
 		exit(0);
 	/*/
+	
+	stbi_set_flip_vertically_on_load(true);
+
 	glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -155,7 +165,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
     
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "spheres and stars", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "horrorgl", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -175,6 +185,7 @@ int main() {
     }
 
 	Shader main_shader("vmain.glsl", "fmain.glsl");
+	Shader sprite_shader("vimage_shader.glsl", "fimage_shader.glsl");
 
 	glEnable(GL_BLEND); 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -216,24 +227,26 @@ int main() {
 	rig2.layer = &layer1;
 	wall_rig.layer = &layer1;
 	
+	Sprite spr("media/sprites/test_image.png", &sprite_shader);
+
 	//tree start here
 	Node root;
 	root.init_root();
 	root.set_name("root");
 
 	root.add_child(rig1.form_node_prt());
-	rig1.set_name("rig1");
+	rig1.set_name("player");
 	root.add_child(rig2.form_node_prt());
-	rig2.set_name("rig2");
+	rig2.set_name("floor");
 	root.add_child(wall_rig.form_node_prt());
-	wall_rig.set_name("wr");
+	wall_rig.set_name("flying_cube");
 
 	rig1.add_child(rg1_mesh.form_node_prt());
 	rig2.add_child(rg2_mesh.form_node_prt());
 	wall_rig.add_child(wall_mesh.form_node_prt());
-	wall_mesh.set_name("sorry you're not the sigma");
+	wall_mesh.set_name("col_mesh");
 
-	root.show_tree_from_here();
+	//root.show_tree_from_here();
 
 	while (!glfwWindowShouldClose(window)) {
 		main_camera.update_mouse(yaw, pitch);
@@ -252,7 +265,7 @@ int main() {
 		
 		glClearColor(0,0,0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+		
 		glm::mat4 view = main_camera.get_view();
         glm::mat4 projection = glm::perspective(glm::radians(80.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		main_shader.setMat4("projection", projection);
@@ -275,6 +288,23 @@ int main() {
 		//if (rig1.is_on_floor) std::cout << "sigma " << std::endl;
 		//else std::cout << "not sigma :(" << std::endl;
 		main_camera.cameraPos = rig1.get_global_position();// - main_camera.cameraFront * glm::vec3(5);
+	
+
+		//2D zone
+		glDisable(GL_DEPTH_TEST);
+ 		glDisable(GL_CULL_FACE);
+		
+		glBindTexture(GL_TEXTURE_2D, spr.texture);
+		sprite_shader.use();
+		spr.drow();
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+
+		//2D end
+		main_shader.use();
+
+
 
 		glfwSwapBuffers(window);
     	glfwPollEvents();

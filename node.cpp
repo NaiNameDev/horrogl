@@ -71,3 +71,27 @@ public:
 		return ret;
 	}
 };
+class Node2D : public Node {
+public:
+	glm::vec2 position;
+	std::string name = "Node2D";
+	enum node_type own_type = NODE2D;
+
+	Node2D(glm::vec2 npos = glm::vec2(0,0)) { position = npos; own_type = NODE2D; }
+	
+	node_ptr form_node_prt() {
+		return (node_ptr){this, own_type};
+	}
+
+	glm::vec2 get_global_position() {
+		glm::vec2 ret = position;
+
+		node_ptr tmp = parant;
+		while(static_cast<Node2D*>(tmp.ptr)->own_type == NODE2D) {
+			ret += static_cast<Node2D*>(tmp.ptr)->position;
+			tmp = static_cast<Node2D*>(tmp.ptr)->parant;
+		}
+
+		return ret;
+	}
+};
