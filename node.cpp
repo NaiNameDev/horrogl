@@ -1,31 +1,31 @@
 enum node_type {DNODE, NODE3D, NODE2D, UINODE};
-typedef struct {
+/*typedef struct {
 	void* ptr;
 	node_type type;
 } node_ptr;
 
 class Node3D;
-
+*/
 class Node {
 public:
-	node_ptr parant;
-	std::vector<node_ptr> childs;
-	enum node_type own_type = DNODE;
+	Node* parant;
+	std::vector<Node*> childs;
+	enum node_type own_type;
 
-	std::string name = "Node";
+	std::string name;
 
-	Node() {}
+	Node(std::string new_name = "Node") { name = new_name; own_type = DNODE;}
 	
-	node_ptr form_node_prt() {
+	/*node_ptr form_node_prt() {
 		return (node_ptr){this, own_type};
-	}
+	}*/
 
 	void init_root() {
-		parant = form_node_prt();
+		parant = this;
 	}
-	void add_child(node_ptr child_ptr) {
+	void add_child(Node* child_ptr) {
 		childs.push_back(child_ptr);
-		static_cast<Node*>(child_ptr.ptr)->parant = form_node_prt();
+		child_ptr->parant = this;
 	}
 	//void move_to_child(node_ptr new_parant) {    //this shit doesnt work bruh
 	//	static_cast<Node*>(new_parant.ptr)->add_child(form_node_prt());
@@ -39,8 +39,8 @@ public:
 
 		for (int i = 0; i < childs.size(); i++) {
 			for (int t = 0; t < deep; t++) std::cout << "  ";
-			std::cout << static_cast<Node*>(childs[i].ptr)->name << " type:" << childs[i].type << '\n';
-			static_cast<Node*>(childs[i].ptr)->show_tree_from_here(deep + 1);
+			std::cout << childs[i]->name << '\n';
+			childs[i]->show_tree_from_here(deep + 1);
 		}
 	}
 	
@@ -49,23 +49,18 @@ public:
 class Node3D : public Node {
 public:
 	glm::vec3 position;
-	std::string name = "Node3D";
-	enum node_type own_type = NODE3D;
+	std::string name;
+	enum node_type own_type;
 
-	Node3D(glm::vec3 npos = glm::vec3(0,0,0)) { position = npos; own_type = NODE3D; }
-	
-	node_ptr form_node_prt() {
-		return (node_ptr){this, own_type};
-	}
+	Node3D(glm::vec3 npos = glm::vec3(0,0,0), std::string new_name = "Node3D") : Node(new_name) { position = npos; own_type = NODE3D;}
 
 	glm::vec3 get_global_position() {
 		glm::vec3 ret = position;
 
-		node_ptr tmp = parant;
-		while(static_cast<Node3D*>(tmp.ptr)->own_type == NODE3D) {
-			//std::cout << static_cast<Node3D*>(tmp.ptr)->own_type << std::endl;
-			ret += static_cast<Node3D*>(tmp.ptr)->position;
-			tmp = static_cast<Node3D*>(tmp.ptr)->parant;
+		Node* tmp = parant;
+		while(static_cast<Node3D*>(tmp)->own_type == NODE3D && tmp->parant != tmp) {
+			ret += static_cast<Node3D*>(tmp)->position;
+			tmp = static_cast<Node3D*>(tmp)->parant;
 		}
 
 		return ret;
@@ -74,22 +69,18 @@ public:
 class Node2D : public Node {
 public:
 	glm::vec2 position;
-	std::string name = "Node2D";
-	enum node_type own_type = NODE2D;
+	std::string name;
+	enum node_type own_type;
 
-	Node2D(glm::vec2 npos = glm::vec2(0,0)) { position = npos; own_type = NODE2D; }
-	
-	node_ptr form_node_prt() {
-		return (node_ptr){this, own_type};
-	}
+	Node2D(glm::vec2 npos = glm::vec2(0,0), std::string new_name = "Node2D") : Node(new_name) { position = npos; own_type = NODE2D;}
 
 	glm::vec2 get_global_position() {
 		glm::vec2 ret = position;
 
-		node_ptr tmp = parant;
-		while(static_cast<Node2D*>(tmp.ptr)->own_type == NODE2D) {
-			ret += static_cast<Node2D*>(tmp.ptr)->position;
-			tmp = static_cast<Node2D*>(tmp.ptr)->parant;
+		Node* tmp = parant;
+		while(tmp->own_type == NODE2D) {
+			ret += static_cast<Node2D*>(tmp)->position;
+			tmp = static_cast<Node2D*>(tmp)->parant;
 		}
 
 		return ret;

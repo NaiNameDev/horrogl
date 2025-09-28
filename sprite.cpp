@@ -15,12 +15,8 @@ public:
          0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f // top right
     };
 
-	std::string name = "Sprite";
-
-	Sprite() {}
-
-	Sprite(const char* path, Shader* new_shader, glm::vec2 npos = glm::vec3(0,0,0)) 
-		: Node2D(npos) {
+	Sprite(const char* path, Shader* new_shader, glm::vec2 npos = glm::vec2(0,0), std::string new_name = "Sprite") 
+		: Node2D(npos, new_name) {
 		shader = new_shader;
 	
     	glGenVertexArrays(1, &VAO);

@@ -1,7 +1,5 @@
 class CollisionMesh : public Mesh {
 public:
-	std::string name = "CollisionMesh";
-	
 	int max_x;
 	int max_y;
 	int max_z;
@@ -10,8 +8,8 @@ public:
 	int min_y;
 	int min_z;
 
-	CollisionMesh(Mesh from, glm::vec3 npos = glm::vec3(0,0,0))
-		: Mesh(from.own_vertices, from.vertices_cnt, from.shader, npos) {
+	CollisionMesh(Mesh from, glm::vec3 npos = glm::vec3(0,0,0), std::string new_name = "CollisionMesh")
+		: Mesh(from.own_vertices, from.vertices_cnt, from.shader, npos, new_name) {
 		max_x = own_vertices[0];
 		max_y = own_vertices[1];
 		max_z = own_vertices[2];
@@ -76,31 +74,38 @@ public:
 	}
 };
 
-class RigidBody;
+class StaticBody;
 class PhysicsLayer {
 public:
-	std::vector<RigidBody*> layer;
+	std::vector<StaticBody*> layer;
 
-	void push_body(RigidBody* rig) {
-		layer.push_back(rig);
-		//rig->layer = this;
+	void push_body(StaticBody* body) {
+		layer.push_back(body);
+	}
+};
+
+class StaticBody : public Node3D {
+public:
+	CollisionMesh* col_mesh;
+	std::vector<PhysicsLayer*> layers;
+
+	StaticBody(glm::vec3 npos = glm::vec3(0,0,0), std::string new_name = "StaticBody") 
+	: Node3D(npos, new_name) { }
+
+	void push_layer(PhysicsLayer* new_layer) {
+		layers.push_back(new_layer);
 	}
 };
 
 #define gravity (9.8 * delta)
 
-class RigidBody : public Node3D {
+class RigidBody : public StaticBody {
 public:
-	std::string name = "RigidBody";
-
-	glm::vec3 velocity = glm::vec3(0);
+	glm::vec3 velocity;
 	bool is_on_floor = false;
 	
-	CollisionMesh* col_mesh;
-	PhysicsLayer* layer;
-
-	RigidBody(glm::vec3 npos = glm::vec3(0,0,0)) 
-	: Node3D(npos) { }
+	RigidBody(glm::vec3 npos = glm::vec3(0,0,0), std::string new_name = "RigidBody") 
+	: StaticBody(npos, new_name) { }
 
 	void apply_gravity(float delta) {
 		velocity.y -= gravity;
@@ -111,17 +116,19 @@ public:
 	void move_and_colide(float delta) {
 		move(delta);
 		
-		for (int i = 0; i < layer->layer.size(); i++) {
-			if (layer->layer[i] != this) {
-				glm::vec3 aabb = col_mesh->is_aabb_colliding_with(*layer->layer[i]->col_mesh);
-				glm::vec3 maabb = get_min(aabb);
+		for (int i = 0; i < layers.size(); i++) {
+			for (int j = 0; j < layers[i]->layer.size(); j++) {
+				if (layers[i]->layer[j] != this) {
+					glm::vec3 aabb = col_mesh->is_aabb_colliding_with(*layers[i]->layer[j]->col_mesh);
+					glm::vec3 maabb = get_min(aabb);
 			
-				if (glm::abs(aabb.x) > 0 && glm::abs(aabb.y) > 0 && glm::abs(aabb.z) > 0) {
-					if (maabb.y > 0.0f) {
-						is_on_floor = true;
-						velocity.y = 0;
+					if (glm::abs(aabb.x) > 0 && glm::abs(aabb.y) > 0 && glm::abs(aabb.z) > 0) {
+						if (maabb.y > 0.0f) {
+							is_on_floor = true;
+							velocity.y = 0;
+						}
+						position += maabb; 
 					}
-					position += maabb; 
 				}
 			}
 		}

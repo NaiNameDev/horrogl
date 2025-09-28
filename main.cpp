@@ -3,11 +3,15 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <map>
 #include <type_traits>
 
 //for 2D
 #define STB_IMAGE_IMPLEMENTATION
-#include "include/stb_image.h"
+#include <stb_image.h>
+//fonts
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -32,10 +36,11 @@ glm::vec3 get_min(glm::vec3 v) {
 #include "obj_reader.cpp"
 #include "aabb_phys_object.cpp"
 
-#include "sprite.cpp"
-
 #define SCR_WIDTH 1440
 #define SCR_HEIGHT 720
+
+#include "sprite.cpp"
+#include "text_render.cpp"
 
 //delta
 float deltaTime = 0.0f;	// Time between current frame and last frame
@@ -47,7 +52,7 @@ float yaw = 90.0f, pitch = 0.0f;
 bool firstMouse = true;
 float lastX = 0, lastY = 0;
 
-RigidBody rig1;
+RigidBody player;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -97,52 +102,48 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 #define player_speed 5.0f
 void processInput(GLFWwindow *window)
 {
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {rig1. velocity.y = 5.0f;}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {player. velocity.y = 5.0f;}
 	
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE) {rig1. velocity.z = 0.0f;}
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {rig1. velocity.z = 0.0f;}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE) {rig1. velocity.x = 0.0f;}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE) {rig1. velocity.x = 0.0f;}
-	//if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASEdd) {rig1. velocity.y = 0.0f;}
-	//if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE) {rig1. velocity.y = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE) {player. velocity.z = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {player. velocity.z = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE) {player. velocity.x = 0.0f;}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE) {player. velocity.x = 0.0f;}
+	//if (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASEdd) {player. velocity.y = 0.0f;}
+	//if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE) {player. velocity.y = 0.0f;}
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		rig1. velocity.x = main_camera.cameraFront.x * player_speed;
-		rig1. velocity.z = main_camera.cameraFront.z * player_speed;
+		player. velocity.x = main_camera.camera_front.x * player_speed;
+		player. velocity.z = main_camera.camera_front.z * player_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		rig1. velocity.x = main_camera.cameraFront.x * -player_speed;
-		rig1. velocity.z = main_camera.cameraFront.z * -player_speed;
+		player. velocity.x = main_camera.camera_front.x * -player_speed;
+		player. velocity.z = main_camera.camera_front.z * -player_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		rig1. velocity.x += glm::normalize(glm::cross(main_camera.cameraFront, main_camera.cameraUp)).x * -player_speed;
-		rig1. velocity.z += glm::normalize(glm::cross(main_camera.cameraFront, main_camera.cameraUp)).z * -player_speed;
+		player. velocity.x += glm::normalize(glm::cross(main_camera.camera_front, main_camera.camera_up)).x * -player_speed;
+		player. velocity.z += glm::normalize(glm::cross(main_camera.camera_front, main_camera.camera_up)).z * -player_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		rig1. velocity.x += glm::normalize(glm::cross(main_camera.cameraFront, main_camera.cameraUp)).x * player_speed;
-		rig1. velocity.z += glm::normalize(glm::cross(main_camera.cameraFront, main_camera.cameraUp)).z * player_speed;
+		player. velocity.x += glm::normalize(glm::cross(main_camera.camera_front, main_camera.camera_up)).x * player_speed;
+		player. velocity.z += glm::normalize(glm::cross(main_camera.camera_front, main_camera.camera_up)).z * player_speed;
 	}
-	//if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {rig1. velocity.y = 3.0f;}
-	//if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {rig1. velocity.y = -3.0f;}
+	//if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {player. velocity.y = 3.0f;}
+	//if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {player. velocity.y = -3.0f;}
 }
 
 int main() {
-	/*/ no glfw debug zone
-		Node root;
+	/* no glfw debug zone
+		Node root("root");
 		root.init_root();
-		root.set_name("root");
 
-		Node3D sigma(glm::vec3(1,1,1));
-		sigma.set_name("sigma3D");
-		root.add_child(sigma.form_node_prt());
+		Node3D sigma(glm::vec3(3,3,3), "sigma1");
+		root.add_child(&sigma);
 		
-		Node3D sigma2(glm::vec3(1,2,1));
-		sigma2.set_name("sigma2_3D");
-		sigma.add_child(sigma2.form_node_prt());
+		Node3D sigma2(glm::vec3(1,2,1), "sigma2");
+		sigma.add_child(&sigma2);
 
-		Node3D sigma3(glm::vec3(1,2,1));
-		sigma3.set_name("sigma3_3D");
-		sigma2.add_child(sigma3.form_node_prt());
+		Node3D sigma3(glm::vec3(1,2,1), "sigma3");
+		sigma2.add_child(&sigma3);
 
 		glm::vec3 a = sigma3.get_global_position();
 
@@ -151,7 +152,7 @@ int main() {
 		root.show_tree_from_here();
 
 		exit(0);
-	/*/
+	*/
 	
 	stbi_set_flip_vertically_on_load(true);
 
@@ -209,44 +210,44 @@ int main() {
 	rdr.read_vertices("./media/obj/floor.obj");
 	CollisionMesh rg2_mesh = CollisionMesh(rdr.create_mesh(&main_shader));
 
-	rig1 = RigidBody();
-	rig1.col_mesh = &rg1_mesh;
+	player = RigidBody(glm::vec3(0,0,0), "Player");
+	player.col_mesh = &rg1_mesh;
+	player.add_child(&main_camera);
 	
-	RigidBody rig2(glm::vec3(0.0f, -3.0f, 0.0f));
-	rig2.col_mesh = &rg2_mesh;
+	StaticBody floorbd(glm::vec3(0.0f, -3.0f, 0.0f), "Floor");
+	floorbd.col_mesh = &rg2_mesh;
 
-	RigidBody wall_rig(glm::vec3(0.0f, -2.0f, 2.0f));
+	RigidBody wall_rig(glm::vec3(0.0f, -2.0f, 2.0f), "Cube");
 	wall_rig.col_mesh = &wall_mesh;
 
 	PhysicsLayer layer1;
-	layer1.push_body(&rig1);
-	layer1.push_body(&rig2);
+	layer1.push_body(&player);
+	layer1.push_body(&floorbd);
 	layer1.push_body(&wall_rig);
-
-	rig1.layer = &layer1;
-	rig2.layer = &layer1;
-	wall_rig.layer = &layer1;
 	
-	Sprite spr("media/sprites/test_image.png", &sprite_shader);
+	player.push_layer(&layer1);
+	floorbd.push_layer(&layer1);
+	wall_rig.push_layer(&layer1);
+
+	//Sprite spr("media/sprites/test_image.png", &sprite_shader);
 
 	//tree start here
 	Node root;
 	root.init_root();
 	root.set_name("root");
 
-	root.add_child(rig1.form_node_prt());
-	rig1.set_name("player");
-	root.add_child(rig2.form_node_prt());
-	rig2.set_name("floor");
-	root.add_child(wall_rig.form_node_prt());
-	wall_rig.set_name("flying_cube");
+	root.add_child(&player);
+	root.add_child(&floorbd);
+	root.add_child(&wall_rig);
 
-	rig1.add_child(rg1_mesh.form_node_prt());
-	rig2.add_child(rg2_mesh.form_node_prt());
-	wall_rig.add_child(wall_mesh.form_node_prt());
-	wall_mesh.set_name("col_mesh");
+	player.add_child(&rg1_mesh);
+	floorbd.add_child(&rg2_mesh);
+	wall_rig.add_child(&wall_mesh);
 
-	//root.show_tree_from_here();
+	root.show_tree_from_here();
+	
+	Shader text_shader("vtext_shader.glsl", "ftext_shader.glsl");
+	Label hoi("media/open_sans/static/OpenSans-Italic.ttf", &text_shader, glm::vec2(100, 100));
 
 	while (!glfwWindowShouldClose(window)) {
 		main_camera.update_mouse(yaw, pitch);
@@ -277,34 +278,31 @@ int main() {
 		wall_rig.col_mesh->drow();
 
 		main_shader.setVec3("objectColor", glm::vec3(0.2f, 1.0f, 0.9f));
-		rig2.col_mesh->position = rig2.position;
-		rig2.col_mesh->drow();
+		floorbd.col_mesh->drow();
 		
-		rig1.apply_gravity(deltaTime);
-		rig1.move_and_colide(deltaTime);
+		player.apply_gravity(deltaTime);
+		player.move_and_colide(deltaTime);
 		
 		//main_shader.setVec3("objectColor", glm::vec3(0.9f, 1.0f, 0.9f));
-		//rig1.col_mesh->drow();
-		//if (rig1.is_on_floor) std::cout << "sigma " << std::endl;
+		//player.col_mesh->drow();
+		//if (player.is_on_floor) std::cout << "sigma " << std::endl;
 		//else std::cout << "not sigma :(" << std::endl;
-		main_camera.cameraPos = rig1.get_global_position();// - main_camera.cameraFront * glm::vec3(5);
-	
 
 		//2D zone
 		glDisable(GL_DEPTH_TEST);
  		glDisable(GL_CULL_FACE);
 		
-		glBindTexture(GL_TEXTURE_2D, spr.texture);
-		sprite_shader.use();
-		spr.drow();
+		hoi.drow("HELLO WORLD!! SIGMA");
+
+		//glBindTexture(GL_TEXTURE_2D, spr.texture);
+		//sprite_shader.use();
+		//spr.drow();
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
 		//2D end
 		main_shader.use();
-
-
 
 		glfwSwapBuffers(window);
     	glfwPollEvents();

@@ -5,7 +5,7 @@ public:
 	float* own_vertices;
 	Shader* shader;
 
-	std::string name = "Mesh";
+	std::string name;
 
 	Mesh() {}
 
@@ -15,8 +15,8 @@ public:
 		position = npos;
 		own_vertices = vertices;
 	}*/
-	Mesh(float* vertices, int vertices_size, Shader* new_shader, glm::vec3 npos = glm::vec3(0,0,0)) 
-		: Node3D(npos) {
+	Mesh(float* vertices, int vertices_size, Shader* new_shader, glm::vec3 npos = glm::vec3(0,0,0), std::string new_name = "Mesh") 
+		: Node3D(npos, new_name) {
 		shader = new_shader;
 		vertices_cnt = vertices_size;
 		position = npos;
